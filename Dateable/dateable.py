@@ -33,7 +33,8 @@ months_abbrev = {
 }
 
 exact_match_dates_numerical = r'\d{1,4}[\-/\.\:]\d{1,2}[\-/\.\:]\d{1,4}'
-exact_match_dates_string = r'month\s(\d{1,2})\w{0,2}\,?\s(\d{2,4})'
+exact_match_dates_string_pattern1 = r'month\s(\d{1,2})\w{0,2}\,?\s(\d{2,4})'
+exact_match_dates_string_pattern2 = r'(\d{1,2})\w{0,2}\smonth\,?\s(\d{2,4})'
 
 
 class dater(object):
@@ -47,14 +48,26 @@ class dater(object):
 			query = re.sub(mon, months_abbrev[mon], query)
 		for month in months:
 			if month in query:
-				reg = exact_match_dates_string.replace('month',month)
-				m = re.search(reg, query)
-				if m is not None:
-					marr = m.groups()
-					m = self._clean_month(months[month])
-					y = self._clean_year(marr[1])
-					d = self._clean_day(marr[0])
-				found.append(y + '-' + m + '-' + d)
+				reg1 = exact_match_dates_string_pattern1.replace('month',month)
+				reg2 = exact_match_dates_string_pattern2.replace('month',month)
+				m1 = re.search(reg1, query)
+				m2 = re.search(reg2, query)
+				if m1 is not None:
+					marr1 = m1.groups()
+					m1 = self._clean_month(months[month])
+					y1 = self._clean_year(marr1[1])
+					d1 = self._clean_day(marr1[0])
+					if m1 is not None and y1 is not None and d1 is not None:
+						found.append(y1 + '-' + m1 + '-' + d1)
+				if m2 is not None:
+					marr2 = m2.groups()
+					m2 = self._clean_month(months[month])
+					y2 = self._clean_year(marr2[1])
+					d2 = self._clean_day(marr2[0])
+					if m2 is not None and y2 is not None and d2 is not None:
+						d = y2 + '-' + m2 + '-' + d2
+						if d not in found:
+							found.append(d)
 		return found
 
 
@@ -173,7 +186,7 @@ class dater(object):
 
 
 
-s = 'january 15th, 2005 mar. 1 09 2013-01-01 2012.1.9'
+s = '21st october, 1987 january 15th, 2005 mar. 1 09 2013-01-01 2012.1.9'
 d = dater()
 print d.get_dates_string(s)
 print d.get_dates_numerical(s)
