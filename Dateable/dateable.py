@@ -2,14 +2,61 @@
 import re
 from datetime import date
 
+months = {
+	'january':'01',
+	'february':'02',
+	'march':'03',
+	'april':'04',
+	'may':'05',
+	'june':'06',
+	'july':'07',
+	'august':'08',
+	'september':'09',
+	'october':'10',
+	'november':'11',
+	'december':'12'
+}
+months_abbrev = {
+	'jan\.?\s':'january ',
+	'feb\.?\s':'february ',
+	'febr\.?\s':'february ',
+	'mar\.?\s':'march ',
+	'apr\.?\s':'april ',
+	'jun\.?\s':'june ',
+	'jul\.?\s':'jul ',
+	'aug\.?\s':'august ',
+	'sep\.?\s':'september ',
+	'sept\.?\s':'september ',
+	'oct\.?\s':'october ',
+	'nov\.?\s':'november ',
+	'dec\.?\s':'december '
+}
+
 exact_match_dates_numerical = r'\d{1,4}[\-/\.\:]\d{1,2}[\-/\.\:]\d{1,4}'
+exact_match_dates_string = r'month\s(\d{1,2})\w{0,2}\,?\s(\d{2,4})'
 
 
 class dater(object):
-
 	#########################################
 	############# public methods ############
 	#########################################
+
+	def get_dates_string(self, query):
+		found = []
+		for mon in months_abbrev:
+			query = re.sub(mon, months_abbrev[mon], query)
+		for month in months:
+			if month in query:
+				reg = exact_match_dates_string.replace('month',month)
+				m = re.search(reg, query)
+				if m is not None:
+					marr = m.groups()
+					m = self._clean_month(months[month])
+					y = self._clean_year(marr[1])
+					d = self._clean_day(marr[0])
+				found.append(y + '-' + m + '-' + d)
+		return found
+
 
 	def get_dates_numerical(self, date_str):
 		m = re.findall(exact_match_dates_numerical, date_str)
@@ -35,8 +82,7 @@ class dater(object):
 				continue
 			date_str = y + '-' +  m + '-' + d
 			dates_to_return.append(date_str)
-		print dates
-		print dates_to_return
+		return dates_to_return
 
 
 	def _get_year_from_numerical_date(self, darr):
@@ -65,7 +111,9 @@ class dater(object):
 			year = twos[1]
 		if year is None:
 			return year
-		print year
+		return self._clean_year(year)
+
+	def _clean_year(self, year):
 		if len(year) == 2:
 			if int(year) + 2000 > date.today().year:
 				year = str(int(year) + 1900)
@@ -88,11 +136,13 @@ class dater(object):
 			darr_copy.pop(i)
 		if len(darr_copy) == 0:
 			return None
-		month = darr_copy[0]
+		return self._clean_month(darr_copy[0])
+
+
+	def _clean_month(self, month):
 		if len(month) == 1:
 			month = '0' + month
 		return month
-
 
 
 	def _get_day_from_numerical_date(self, darr):
@@ -113,12 +163,17 @@ class dater(object):
 			return None
 		if day is None:
 			day = darr_copy[0]
+		return self._clean_day(day)
+
+
+	def _clean_day(self, day):
 		if len(day) == 1:
 			day = '0' + day
 		return day
 
 
 
-s = 'hello it is march 2nd 2013 2013-01-03 2012.1.2 03.21.13 3.2.8'
+s = 'january 15th, 2005 mar. 1 09 2013-01-01 2012.1.9'
 d = dater()
-d.get_dates_numerical(s)
+print d.get_dates_string(s)
+print d.get_dates_numerical(s)
